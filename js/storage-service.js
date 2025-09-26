@@ -88,13 +88,15 @@ const StorageService = {
     },
     
     // Get recent devices
-    async getRecentDevices(limit = 5) {
-        // Verificar que db esté inicializado
-        if (!this.db) {
-            console.warn('Database not initialized');
-            return [];  // Retornar array vacío en lugar de fallar
-        }
-        
+    // Get recent devices
+async getRecentDevices(limit = 5) {
+    // Verificar que db esté inicializado
+    if (!this.db) {
+        console.warn('Database not initialized');
+        return [];  // <-- Retornar array vacío
+    }
+    
+    try {
         const transaction = this.db.transaction(['devices'], 'readonly');
         const store = transaction.objectStore('devices');
         const index = store.index('lastConnected');
@@ -114,9 +116,16 @@ const StorageService = {
                 }
             };
             
-            request.onerror = () => reject(request.error);
+            request.onerror = () => {
+                console.error('Error getting recent devices:', request.error);
+                resolve([]); // <-- En caso de error, devolver array vacío
+            };
         });
-    },
+    } catch(error) {
+        console.error('Error in getRecentDevices:', error);
+        return []; // <-- En caso de excepción, devolver array vacío
+    }
+},
     
     // Save streaming data point
     async addStreamingData(data) {
