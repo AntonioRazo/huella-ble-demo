@@ -87,7 +87,7 @@ function setupEventHandlers() {
 }
 
 // Cargar dispositivos recientes
-function loadRecentDevices() {
+async function loadRecentDevices() {
     try {
         // Verificar que StorageService esté listo
         if (!StorageService.db) {
