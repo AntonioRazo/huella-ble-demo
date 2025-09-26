@@ -88,33 +88,51 @@ function setupEventHandlers() {
 
 // Cargar dispositivos recientes
 function loadRecentDevices() {
-    const devices = StorageService.getRecentDevices();
-    const container = $('#recentDevicesList');
-    
-    if (devices.length === 0) {
-        return;
-    }
-    
-    container.empty();
-    
-    devices.forEach(device => {
-        const card = `
-            <div class="col-md-6 col-lg-4 mb-3">
-                <div class="card device-card" onclick="connectToSavedDevice('${device.id}')">
-                    <div class="card-body">
-                        <h6 class="card-title">
-                            <i class="bi bi-cpu"></i> ${device.name}
-                        </h6>
-                        <small class="text-muted">
-                            ID: ${device.id}<br>
-                            Última conexión: ${formatDate(device.lastConnected)}
-                        </small>
+    try {
+        // Verificar que StorageService esté listo
+        if (!StorageService.db) {
+            console.warn('StorageService no está inicializado');
+            return;
+        }
+        
+        const devices = await StorageService.getRecentDevices();
+        
+        // Verificar que devices es un array
+        if (!Array.isArray(devices)) {
+            console.error('getRecentDevices no devolvió un array:', devices);
+            return;
+        }
+        
+        const container = $('#recentDevicesList');
+        
+        if (devices.length === 0) {
+            return;
+        }
+        
+        container.empty();
+        
+        devices.forEach(device => {
+            const card = `
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card device-card" onclick="connectToSavedDevice('${device.id}')">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-cpu"></i> ${device.name}
+                            </h6>
+                            <small class="text-muted">
+                                ID: ${device.id}<br>
+                                Última conexión: ${formatDate(device.lastConnected)}
+                            </small>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
-        container.append(card);
-    });
+            `;
+            container.append(card);
+        });
+    } catch(error) {
+        console.error('Error cargando dispositivos recientes:', error);
+        // No mostrar error al usuario, solo continuar
+    }
 }
 
 // Escanear dispositivos
