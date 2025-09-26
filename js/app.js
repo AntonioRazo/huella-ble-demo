@@ -17,15 +17,24 @@ $(document).ready(function() {
         return;
     }
     
-    // Inicializar servicios
-    StorageService.init();
+    // Inicializar servicios - ESPERAR a que termine
+    try {
+        await StorageService.init();  // <-- Esperar con await
+        console.log('StorageService inicializado');
+    } catch(error) {
+        console.error('Error inicializando StorageService:', error);
+        // Continuar sin storage, pero sin intentar cargar dispositivos
+    }
+
     ChartService.init('dataChart');
     
     // Inicializar modal de PIN
     pinModal = new bootstrap.Modal(document.getElementById('pinModal'));
     
-    // Cargar dispositivos recientes
-    loadRecentDevices();
+    // Cargar dispositivos recientes SOLO si StorageService está listo
+    if (StorageService.db) {  
+        loadRecentDevices();
+    }
     
     // Registrar Service Worker para PWA
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
