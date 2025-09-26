@@ -7,6 +7,39 @@ let streamingInterval = null;
 let pinModal = null;
 
 // Inicialización
+// Función de inicialización async
+async function initializeApp() {
+    try {
+        // Inicializar servicios
+        await StorageService.init();
+        console.log('StorageService inicializado');
+        
+        // Cargar dispositivos recientes
+        if (StorageService.db) {
+            loadRecentDevices();
+        }
+    } catch(error) {
+        console.error('Error inicializando StorageService:', error);
+    }
+    
+    // Resto de inicializaciones
+    ChartService.init('dataChart');
+    pinModal = new bootstrap.Modal(document.getElementById('pinModal'));
+    
+    // Registrar Service Worker
+    if ('serviceWorker' in navigator && location.protocol === 'https:') {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(() => console.log('Service Worker registrado'))
+            .catch(err => console.error('Error registrando Service Worker:', err));
+    }
+    
+    setupEventHandlers();
+    
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.body.setAttribute('data-theme', savedTheme);
+}
+
+// Document ready
 $(document).ready(function() {
     console.log('Huella BLE Manager iniciado');
     
@@ -17,38 +50,8 @@ $(document).ready(function() {
         return;
     }
     
-    // Inicializar servicios - ESPERAR a que termine
-    try {
-        await StorageService.init();  // <-- Esperar con await
-        console.log('StorageService inicializado');
-    } catch(error) {
-        console.error('Error inicializando StorageService:', error);
-        // Continuar sin storage, pero sin intentar cargar dispositivos
-    }
-
-    ChartService.init('dataChart');
-    
-    // Inicializar modal de PIN
-    pinModal = new bootstrap.Modal(document.getElementById('pinModal'));
-    
-    // Cargar dispositivos recientes SOLO si StorageService está listo
-    if (StorageService.db) {  
-        loadRecentDevices();
-    }
-    
-    // Registrar Service Worker para PWA
-    if ('serviceWorker' in navigator && location.protocol === 'https:') {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(() => console.log('Service Worker registrado'))
-            .catch(err => console.error('Error registrando Service Worker:', err));
-    }
-    
-    // Configurar eventos
-    setupEventHandlers();
-    
-    // Cargar tema guardado
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.body.setAttribute('data-theme', savedTheme);
+    // Llamar a la función async
+    initializeApp();
 });
 
 // Configurar manejadores de eventos
