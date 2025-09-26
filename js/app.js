@@ -16,7 +16,7 @@ async function initializeApp() {
         
         // Cargar dispositivos recientes
         if (StorageService.db) {
-            loadRecentDevices();
+            await loadRecentDevices();
         }
     } catch(error) {
         console.error('Error inicializando StorageService:', error);
