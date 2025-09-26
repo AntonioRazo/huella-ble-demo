@@ -89,6 +89,12 @@ const StorageService = {
     
     // Get recent devices
     async getRecentDevices(limit = 5) {
+        // Verificar que db esté inicializado
+        if (!this.db) {
+            console.warn('Database not initialized');
+            return [];  // Retornar array vacío en lugar de fallar
+        }
+        
         const transaction = this.db.transaction(['devices'], 'readonly');
         const store = transaction.objectStore('devices');
         const index = store.index('lastConnected');
