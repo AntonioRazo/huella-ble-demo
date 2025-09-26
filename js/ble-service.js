@@ -80,56 +80,78 @@ const BLEService = {
     },
     
     // Send authentication PIN
-    async authenticate(pin) {
-        try {
-            const command = {
-                cmd: 'AUTH',
-                pin: pin
+    // En el método authenticate de BLEService
+async authenticate(pin) {
+    try {
+        const command = {
+            cmd: 'AUTH',
+            pin: pin
+        };
+        
+        console.log('Enviando comando AUTH:', command); // Debug
+        
+        // Primero configurar el callback
+        return new Promise((resolve) => {
+            const timeout = setTimeout(() => {
+                console.log('Timeout de autenticación'); // Debug
+                resolve(false);
+            }, 5000);
+            
+            this.authCallback = (authenticated) => {
+                console.log('Callback de autenticación ejecutado:', authenticated); // Debug
+                clearTimeout(timeout);
+                this.isAuthenticated = authenticated;
+                resolve(authenticated);
             };
             
-            await this.sendCommand(command);
-            
-            // Wait for response
-            return new Promise((resolve) => {
-                const timeout = setTimeout(() => {
-                    resolve(false);
-                }, 5000);
-                
-                this.authCallback = (authenticated) => {
-                    clearTimeout(timeout);
-                    this.isAuthenticated = authenticated;
-                    resolve(authenticated);
-                };
+            // DESPUÉS enviar el comando
+            this.sendCommand(command).then(() => {
+                console.log('Comando AUTH enviado exitosamente');
+            }).catch(err => {
+                console.error('Error enviando AUTH:', err);
+                clearTimeout(timeout);
+                resolve(false);
             });
-        } catch (error) {
-            console.error('BLE Auth error:', error);
-            return false;
-        }
-    },
+        });
+    } catch (error) {
+        console.error('BLE Auth error:', error);
+        return false;
+    }
+},
     
     // Send command
     async sendCommand(commandObj) {
-        if (!this.characteristics.cmd) {
-            throw new Error('No command characteristic available');
+    if (!this.characteristics.cmd) {
+        throw new Error('No command characteristic available');
+    }
+    
+    try {
+        const encoder = new TextEncoder();
+        let json;
+        
+        // Si es un objeto, convertir a JSON
+        if (typeof commandObj === 'object') {
+            json = JSON.stringify(commandObj);
+        } else {
+            // Si es un comando simple, crear el objeto
+            json = JSON.stringify({ cmd: commandObj });
         }
         
-        try {
-            const encoder = new TextEncoder();
-            const json = JSON.stringify(commandObj);
-            const data = encoder.encode(json);
-            
-            // BLE has 512 byte limit, check size
-            if (data.length > 512) {
-                throw new Error('Command too large for BLE');
-            }
-            
-            await this.characteristics.cmd.writeValueWithResponse(data);
-            return true;
-        } catch (error) {
-            console.error('BLE Send command error:', error);
-            throw error;
+        console.log('Enviando comando BLE:', json); // Debug
+        const data = encoder.encode(json);
+        
+        if (data.length > 512) {
+            throw new Error('Command too large for BLE');
         }
-    },
+        
+        // Intenta primero con writeValue (sin respuesta)
+        await this.characteristics.cmd.writeValue(data);
+        return true;
+    } catch (error) {
+        console.error('BLE Send command error:', error);
+        throw error;
+    }
+},
     
     // Get device status
     async getStatus() {
