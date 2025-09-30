@@ -152,8 +152,9 @@ async function scanForDevices() {
             if (connected) {
                 hideLoading();
                 // Mostrar modal de PIN
-                $('#pinInput').val('').removeClass('is-invalid');
-                pinModal.show();
+                //$('#pinInput').val('').removeClass('is-invalid');
+                //pinModal.show();
+                onDeviceConnected();
             } else {
                 throw new Error('No se pudo conectar al dispositivo');
             }
@@ -236,6 +237,9 @@ function cancelConnection() {
 // Dispositivo conectado exitosamente
 async function onDeviceConnected() {
     console.log('Dispositivo conectado y autenticado');
+
+    // Marcar como autenticado sin enviar PIN
+    BLEService.isAuthenticated = true;
     
     // Guardar en dispositivos recientes
     if (currentDevice) {
