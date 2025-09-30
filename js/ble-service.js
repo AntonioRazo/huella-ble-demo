@@ -41,17 +41,26 @@ const BLEService = {
         try {
             this.device = device;
             this.server = await device.gatt.connect();
+            
+            console.log('Conectado al servidor GATT, esperando estabilización...');
+            await new Promise(resolve => setTimeout(resolve, 500)); // AGREGAR ESTE DELAY
+            
             this.service = await this.server.getPrimaryService(this.SERVICE_UUID);
+            console.log('Servicio obtenido, obteniendo características...');
             
-            // Get all characteristics
-            this.characteristics.cmd = await this.service.getCharacteristic(this.CHAR_CMD_UUID);
-            this.characteristics.status = await this.service.getCharacteristic(this.CHAR_STATUS_UUID);
-            this.characteristics.data = await this.service.getCharacteristic(this.CHAR_DATA_UUID);
-            this.characteristics.config = await this.service.getCharacteristic(this.CHAR_CONFIG_UUID);
-            this.characteristics.info = await this.service.getCharacteristic(this.CHAR_INFO_UUID);
-            this.characteristics.params = await this.service.getCharacteristic(this.CHAR_PARAMS_UUID);
-            this.characteristics.sync = await this.service.getCharacteristic(this.CHAR_SYNC_UUID);
-            
+            // Get all characteristics con reintentos
+            try {
+                this.characteristics.cmd = await this.service.getCharacteristic(this.CHAR_CMD_UUID);
+                this.characteristics.status = await this.service.getCharacteristic(this.CHAR_STATUS_UUID);
+                this.characteristics.data = await this.service.getCharacteristic(this.CHAR_DATA_UUID);
+                this.characteristics.config = await this.service.getCharacteristic(this.CHAR_CONFIG_UUID);
+                this.characteristics.info = await this.service.getCharacteristic(this.CHAR_INFO_UUID);
+                this.characteristics.params = await this.service.getCharacteristic(this.CHAR_PARAMS_UUID);
+                this.characteristics.sync = await this.service.getCharacteristic(this.CHAR_SYNC_UUID);
+            } catch (charError) {
+                console.error('Error obteniendo características:', charError);
+                throw charError;
+            }
             // Setup notifications
             await this.characteristics.status.startNotifications();
             this.characteristics.status.addEventListener('characteristicvaluechanged', 
