@@ -37,39 +37,100 @@ const BLEService = {
     },
     
     // Connect to device
-    async connect(device) {
-         try {
-                this.device = device;
-                this.server = await device.gatt.connect();
-                this.service = await this.server.getPrimaryService(this.SERVICE_UUID);
-                
-                // Get all characteristics
-                this.characteristics.cmd = await this.service.getCharacteristic(this.CHAR_CMD_UUID);
-                this.characteristics.status = await this.service.getCharacteristic(this.CHAR_STATUS_UUID);
-                this.characteristics.data = await this.service.getCharacteristic(this.CHAR_DATA_UUID);
-                this.characteristics.config = await this.service.getCharacteristic(this.CHAR_CONFIG_UUID);
-                this.characteristics.info = await this.service.getCharacteristic(this.CHAR_INFO_UUID);
-                this.characteristics.params = await this.service.getCharacteristic(this.CHAR_PARAMS_UUID);
-                this.characteristics.sync = await this.service.getCharacteristic(this.CHAR_SYNC_UUID);
-
-            // Setup notifications
+async connect(device) {
+    try {
+        this.device = device;
+        this.server = await device.gatt.connect();
+        this.service = await this.server.getPrimaryService(this.SERVICE_UUID);
+        
+        console.log('Servicio obtenido, obteniendo características...');
+        
+        // Get all characteristics with individual error handling
+        try {
+            this.characteristics.cmd = await this.service.getCharacteristic(this.CHAR_CMD_UUID);
+            console.log('✓ CMD characteristic obtenida');
+        } catch(error) {
+            console.warn('⚠ CMD characteristic no disponible:', error.message);
+        }
+        
+        try {
+            this.characteristics.status = await this.service.getCharacteristic(this.CHAR_STATUS_UUID);
+            console.log('✓ STATUS characteristic obtenida');
+        } catch(error) {
+            console.warn('⚠ STATUS characteristic no disponible:', error.message);
+        }
+        
+        try {
+            this.characteristics.data = await this.service.getCharacteristic(this.CHAR_DATA_UUID);
+            console.log('✓ DATA characteristic obtenida');
+        } catch(error) {
+            console.warn('⚠ DATA characteristic no disponible:', error.message);
+        }
+        
+        try {
+            this.characteristics.config = await this.service.getCharacteristic(this.CHAR_CONFIG_UUID);
+            console.log('✓ CONFIG characteristic obtenida');
+        } catch(error) {
+            console.warn('⚠ CONFIG characteristic no disponible:', error.message);
+        }
+        
+        try {
+            this.characteristics.info = await this.service.getCharacteristic(this.CHAR_INFO_UUID);
+            console.log('✓ INFO characteristic obtenida');
+        } catch(error) {
+            console.warn('⚠ INFO characteristic no disponible:', error.message);
+        }
+        
+        try {
+            this.characteristics.params = await this.service.getCharacteristic(this.CHAR_PARAMS_UUID);
+            console.log('✓ PARAMS characteristic obtenida');
+        } catch(error) {
+            console.warn('⚠ PARAMS characteristic no disponible:', error.message);
+        }
+        
+        try {
+            this.characteristics.sync = await this.service.getCharacteristic(this.CHAR_SYNC_UUID);
+            console.log('✓ SYNC characteristic obtenida');
+        } catch(error) {
+            console.warn('⚠ SYNC characteristic no disponible:', error.message);
+        }
+        
+        // Verificar que al menos tengamos las características críticas
+        const criticalChars = ['cmd', 'status'];
+        const hasCritical = criticalChars.every(name => this.characteristics[name] !== undefined);
+        
+        if (!hasCritical) {
+            throw new Error('Faltan características críticas (CMD o STATUS)');
+        }
+        
+        console.log('Características disponibles:', Object.keys(this.characteristics).filter(k => this.characteristics[k]));
+        
+        // Setup notifications solo si las características existen
+        if (this.characteristics.status) {
             await this.characteristics.status.startNotifications();
             this.characteristics.status.addEventListener('characteristicvaluechanged', 
                 this.handleStatusNotification.bind(this));
-            
+            console.log('✓ Notificaciones STATUS activadas');
+        }
+        
+        if (this.characteristics.data) {
             await this.characteristics.data.startNotifications();
             this.characteristics.data.addEventListener('characteristicvaluechanged', 
                 this.handleDataNotification.bind(this));
-            
-            // Handle disconnection
-            device.addEventListener('gattserverdisconnected', this.handleDisconnection.bind(this));
-            
-            return true;
-        } catch (error) {
-            console.error('BLE Connect error:', error);
-            throw error;
+            console.log('✓ Notificaciones DATA activadas');
         }
-    },
+        
+        // Handle disconnection
+        device.addEventListener('gattserverdisconnected', this.handleDisconnection.bind(this));
+        
+        console.log('✓ Conexión BLE completada exitosamente');
+        return true;
+        
+    } catch (error) {
+        console.error('BLE Connect error:', error);
+        throw error;
+    }
+},
     
     // Disconnect
     disconnect() {
