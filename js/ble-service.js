@@ -239,6 +239,7 @@ async authenticate(pin) {
         
         try {
             const value = await this.characteristics.info.readValue();
+            console.log(value);
             const decoder = new TextDecoder();
             const json = decoder.decode(value);
             return JSON.parse(json);
